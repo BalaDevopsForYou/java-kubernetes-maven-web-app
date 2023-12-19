@@ -18,7 +18,7 @@ spec:
   spec: 
     containers:
     - name: mavenwebappcontainer
-      image: balaknuthi/cicd-java-app:15
+      image: balaknuthi/cicd-java-app:75
       imagePullPolicy: Always
       ports:
       - containerPort: 8080
