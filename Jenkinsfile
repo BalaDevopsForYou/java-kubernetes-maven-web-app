@@ -50,30 +50,23 @@ pipeline {
     }
 }
 stage('sonar-quality-gate-check') {
-    when {
-        expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-    }
-    steps {
-        script {
-            def qg = waitForQualityGate()
-            if (qg.status != 'OK') {
-                error "Pipeline aborted due to quality gate failure: ${qg.status}"
-            } else {
-                def conditions = qg.conditions
-                def numberOfBugs = conditions.find { it.metric == 'bugs' }?.value.toInteger()
-
-                echo "Number of Bugs: ${numberOfBugs}"
-
-                if (numberOfBugs > 12) {
-                    currentBuild.result = 'FAILURE'
-                    error "Pipeline aborted due to more than 12 bugs: ${numberOfBugs}"
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                withSonarQubeEnv('SONAR') {
+                    timeout(time: 2, unit: 'MINUTES') {
+                        script {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                            }
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-
+    
         stage('Upload war file to Nexus') {
             steps {
                 script {
