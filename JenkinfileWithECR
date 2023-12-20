@@ -125,7 +125,7 @@ stage('sonar-quality-gate-check') {
 
         stage('Update Deployment File') {
             environment {
-                GIT_REPO_NAME = "java-kubernetes-maven-web-app"
+                GIT_REPO_NAME = "CICD-ECR-ARGOCD"
                 GIT_USER_NAME = "BalaDevopsForYou"
             }
             steps {
