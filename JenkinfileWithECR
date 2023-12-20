@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         NEW_IMAGE_NAME = "ecr-cicd"
+        ECR_REGISTRY = "838127586179.dkr.ecr.us-east-1.amazonaws.com"
     }
     tools {
         maven 'MAVEN-3.9.6'
@@ -98,8 +99,6 @@ stage('sonar-quality-gate-check') {
     steps {
         script {
             def IMAGE_VERSION = "${NEW_IMAGE_NAME}:${BUILD_NUMBER}"
-            def ECR_REGISTRY = "838127586179.dkr.ecr.us-east-1.amazonaws.com"
-            
             
             try {
                 
@@ -137,7 +136,8 @@ stage('sonar-quality-gate-check') {
                                 git config user.email "balaknuthi999@gmail.com"
                                 git config user.name "BalaDevopsForYou"
                                 IMAGE_VERSION=${NEW_IMAGE_NAME}:${BUILD_NUMBER}
-                                sed -i "s|image:.*|image: ${NEW_IMAGE_NAME}:${BUILD_NUMBER}|g" ./my-deploy/maven-deploy.yml
+                            
+                                sed -i "s|image:.*|image: ${ECR_REGISTRY}/${IMAGE_VERSION}|g" ./my-deploy/maven-deploy.yml
                                 git add ./my-deploy/maven-deploy.yml
                                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                                 git push https://${NEW_GITHUB_TOKEN_VR}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:master
@@ -151,4 +151,3 @@ stage('sonar-quality-gate-check') {
         }
     }
 }
-
