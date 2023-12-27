@@ -18,7 +18,7 @@ spec:
   spec: 
     containers:
     - name: mavenwebappcontainer
-      image: 838127586179.dkr.ecr.us-east-1.amazonaws.com/ecr-cicd:120
+      image: balaknuthi/cicd-java-app:4
       imagePullPolicy: Always
       ports:
       - containerPort: 8080
