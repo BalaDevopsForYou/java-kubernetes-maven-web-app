@@ -94,28 +94,51 @@ stage('sonar-quality-gate-check') {
             }
         }
 
-        stage('Build & Publish Docker images') {
-            steps {
-                script {
-                    def IMAGE_VERSION = "${NEW_IMAGE_NAME}:${BUILD_NUMBER}"
+            stage('Build Docker Image') {
+        steps {
+            script {
+                def IMAGE_VERSION = "${NEW_IMAGE_NAME}:${BUILD_NUMBER}"
+                try {
+                    // Build Docker image
+                    sh "docker build -t ${IMAGE_VERSION} . "
+                } catch (Exception dockerBuildException) {
+                    error "Docker build failed: ${dockerBuildException.message}"
+                }
+            }
+        }
+    }
+
+    stage('Trivy Scan') {
+    steps {
+        script {
+            def IMAGE_VERSION = "${NEW_IMAGE_NAME}:${BUILD_NUMBER}"
+            def trivyExitCode = sh(script: "trivy image ${IMAGE_VERSION} --severity HIGH,CRITICAL ", returnStatus: true)
+
+            if (trivyExitCode != 0) {
+                error "Trivy scan failed with exit code ${trivyExitCode}"
+            }
+        }
+    }
+}
+
+    stage('Publish Docker Image') {
+        steps {
+            script {
+                def IMAGE_VERSION = "${NEW_IMAGE_NAME}:${BUILD_NUMBER}"
+                withCredentials([string(credentialsId: 'jenkins_docker_cred', variable: 'docker_credentials_for_jenkins')]) {
                     try {
-                        sh "docker build -t ${IMAGE_VERSION} . "
-                        withCredentials([string(credentialsId: 'jenkins_docker_cred', variable: 'docker_credentials_for_jenkins')]) {
-                            try {
-                                sh '''
-                                    echo ${docker_credentials_for_jenkins} | docker login -u balaknuthi --password-stdin
-                                '''
-                            } catch (Exception dockerLoginException) {
-                                error "Docker login failed: ${dockerLoginException.message}"
-                            }
-                        }
+                        // Login to Docker registry
+                        sh "echo ${docker_credentials_for_jenkins} | docker login -u balaknuthi --password-stdin"
+
+                        // Push Docker image to registry
                         sh "docker push ${IMAGE_VERSION}"
-                    } catch (Exception dockerException) {
-                        error "Docker build/push failed: ${dockerException.message}"
+                    } catch (Exception dockerPushException) {
+                        error "Docker push failed: ${dockerPushException.message}"
                     }
                 }
             }
         }
+    }
 
         stage('Update Deployment File') {
             environment {
